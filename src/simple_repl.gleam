@@ -1,5 +1,6 @@
 import gleam/dict
 import gleam/io
+import gleam/list
 import gleam/string
 import simplifile
 
@@ -11,38 +12,50 @@ fn get_line(prompt: String) -> String
 @external(erlang, "erlang", "halt")
 fn halt(code: Int) -> Nil
 
-fn clean() {
+type Command {
+  Command(name: String, description: String, run: fn(List(Command)) -> Nil)
+}
+
+fn clean(_cmds: List(Command)) -> Nil {
   case simplifile.delete(history_file) {
     Ok(Nil) -> Nil
     Error(e) -> io.println(simplifile.describe_error(e))
   }
 }
 
-fn history() {
+fn history(_cmds: List(Command)) -> Nil {
   case simplifile.read(history_file) {
     Ok(content) -> io.print(content)
     Error(e) -> io.println(simplifile.describe_error(e))
   }
 }
 
-fn help() -> Nil {
-  io.println("help: print this message")
-  io.println("history: dump history")
-  io.println("clean: delete history")
-  io.println("exit: quit the program")
+fn help(cmds: List(Command)) -> Nil {
+  io.println("Available commands:")
+  list.each(cmds, fn(cmd) {
+    io.println("  " <> cmd.name <> " - " <> cmd.description)
+  })
 }
 
-fn exit() -> Nil {
+fn exit(_cmds: List(Command)) -> Nil {
   halt(0)
 }
 
-fn commands() -> dict.Dict(String, fn() -> Nil) {
-  dict.from_list([
-    #("clean", clean),
-    #("help", help),
-    #("history", history),
-    #("exit", exit),
-  ])
+fn build_commands() -> List(Command) {
+  [
+    Command("clean", "delete history", clean),
+    Command("help", "show this help", help),
+    Command("history", "show history", history),
+    Command("exit", "quit the program", exit),
+  ]
+}
+
+fn commands_dict(
+  cmds: List(Command),
+) -> dict.Dict(String, fn(List(Command)) -> Nil) {
+  list.fold(cmds, dict.new(), fn(acc, cmd) {
+    dict.insert(acc, cmd.name, cmd.run)
+  })
 }
 
 fn append_history(cmd: String) -> Nil {
@@ -52,7 +65,7 @@ fn append_history(cmd: String) -> Nil {
   }
 }
 
-fn repl_loop(cmds: dict.Dict(String, fn() -> Nil)) -> a {
+fn repl_loop(cmds: List(Command)) -> a {
   let input = get_line("repl> ") |> string.trim
   let cmd = string.lowercase(input)
 
@@ -60,8 +73,8 @@ fn repl_loop(cmds: dict.Dict(String, fn() -> Nil)) -> a {
     "" -> Nil
     _ -> {
       input |> append_history
-      case dict.get(cmds, cmd) {
-        Ok(func) -> func()
+      case dict.get(commands_dict(cmds), cmd) {
+        Ok(func) -> func(cmds)
         Error(_) -> io.println(input <> ": unknown command")
       }
     }
@@ -71,7 +84,7 @@ fn repl_loop(cmds: dict.Dict(String, fn() -> Nil)) -> a {
 }
 
 pub fn main() -> Nil {
-  let cmds = commands()
+  let cmds = build_commands()
   case simplifile.is_file(history_file) {
     Ok(True) -> repl_loop(cmds)
     _ ->
