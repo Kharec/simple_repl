@@ -52,22 +52,23 @@ fn append_history(cmd: String) -> Nil {
   }
 }
 
-fn repl_loop() -> a {
+fn repl_loop(cmds: dict.Dict(String, fn() -> Nil)) -> a {
   let cmd = get_line("repl> ") |> string.trim
   cmd |> append_history
-  case dict.get(commands(), cmd) {
+  case dict.get(cmds, cmd) {
     Ok(func) -> func()
     Error(_) -> io.println(cmd <> ": unknown command")
   }
-  repl_loop()
+  repl_loop(cmds)
 }
 
 pub fn main() -> Nil {
+  let cmds = commands()
   case simplifile.is_file(history_file) {
-    Ok(True) -> repl_loop()
+    Ok(True) -> repl_loop(cmds)
     _ ->
       case simplifile.create_file(history_file) {
-        Ok(Nil) -> repl_loop()
+        Ok(Nil) -> repl_loop(cmds)
         Error(e) -> io.println(simplifile.describe_error(e))
       }
   }
