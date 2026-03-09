@@ -53,11 +53,12 @@ fn append_history(cmd: String) -> Nil {
 }
 
 fn repl_loop(cmds: dict.Dict(String, fn() -> Nil)) -> a {
-  let cmd = get_line("repl> ") |> string.trim
-  cmd |> append_history
+  let input = get_line("repl> ") |> string.trim
+  let cmd = string.lowercase(input)
+  input |> append_history
   case dict.get(cmds, cmd) {
     Ok(func) -> func()
-    Error(_) -> io.println(cmd <> ": unknown command")
+    Error(_) -> io.println(input <> ": unknown command")
   }
   repl_loop(cmds)
 }
