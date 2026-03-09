@@ -12,7 +12,7 @@ fn get_line(prompt: String) -> String
 @external(erlang, "erlang", "halt")
 fn halt(code: Int) -> Nil
 
-type Command {
+pub type Command {
   Command(name: String, description: String, run: fn(List(Command)) -> Nil)
 }
 
@@ -41,7 +41,7 @@ fn exit(_cmds: List(Command)) -> Nil {
   halt(0)
 }
 
-fn build_commands() -> List(Command) {
+pub fn build_commands() -> List(Command) {
   [
     Command("clean", "delete history", clean),
     Command("help", "show this help", help),
@@ -50,7 +50,7 @@ fn build_commands() -> List(Command) {
   ]
 }
 
-fn commands_dict(
+pub fn commands_dict(
   cmds: List(Command),
 ) -> dict.Dict(String, fn(List(Command)) -> Nil) {
   list.fold(cmds, dict.new(), fn(acc, cmd) {
