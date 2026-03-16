@@ -1,4 +1,3 @@
-import gleam/dict
 import gleam/io
 import gleam/list
 import gleam/string
@@ -50,14 +49,6 @@ pub fn build_commands() -> List(Command) {
   ]
 }
 
-pub fn commands_dict(
-  cmds: List(Command),
-) -> dict.Dict(String, fn(List(Command)) -> Nil) {
-  list.fold(cmds, dict.new(), fn(acc, cmd) {
-    dict.insert(acc, cmd.name, cmd.run)
-  })
-}
-
 fn append_history(cmd: String) -> Nil {
   case simplifile.append(history_file, cmd <> "\n") {
     Ok(Nil) -> Nil
@@ -73,8 +64,8 @@ fn repl_loop(cmds: List(Command)) -> a {
     "" -> Nil
     _ -> {
       input |> append_history
-      case dict.get(commands_dict(cmds), cmd) {
-        Ok(func) -> func(cmds)
+      case list.find(cmds, fn(c) { c.name == cmd }) {
+        Ok(command) -> command.run(cmds)
         Error(_) -> io.println(input <> ": unknown command")
       }
     }
