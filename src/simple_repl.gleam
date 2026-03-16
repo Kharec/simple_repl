@@ -31,7 +31,8 @@ fn history(_cmds: List(Command)) -> Nil {
 
 fn help(cmds: List(Command)) -> Nil {
   io.println("Available commands:")
-  list.each(cmds, fn(cmd) {
+  cmds
+  |> list.each(fn(cmd) {
     io.println("  " <> cmd.name <> " - " <> cmd.description)
   })
 }
