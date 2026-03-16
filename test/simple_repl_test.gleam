@@ -1,19 +1,17 @@
-import gleam/dict
+import gleam/list
 import gleeunit
 import gleeunit/should
 import simple_repl
 
 pub fn command_lookup_test() {
-  let commands =
-    simple_repl.build_commands()
-    |> simple_repl.commands_dict
+  let commands = simple_repl.build_commands()
 
-  let has_help = case dict.get(commands, "help") {
+  let has_help = case list.find(commands, fn(c) { c.name == "help" }) {
     Ok(_) -> True
     Error(_) -> False
   }
 
-  let has_unknown = case dict.get(commands, "foo") {
+  let has_unknown = case list.find(commands, fn(c) { c.name == "foo" }) {
     Ok(_) -> True
     Error(_) -> False
   }
